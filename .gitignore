@@ -2,3 +2,6 @@
 *.txt
 *.png
 *.zip
+
+.ipynb_checkpoints
+build
