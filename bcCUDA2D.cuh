@@ -18,4 +18,8 @@
 
 #pragma once
 
-void seqBC2D(unsigned char* M, const int m, float* n);
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+// Cuda box-counting algorithm for data in 2D
+cudaError_t CudaBC2D(const unsigned char* M, const long long int m, const unsigned char bits_m, const unsigned int TPB, const int nn, float* n);

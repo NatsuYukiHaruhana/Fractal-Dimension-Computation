@@ -9,5 +9,5 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(
     FractalDimensionComputation
-    main.cpp bcCPU.cpp)
+    main.cpp bcCPU.cpp FastDBC.cpp)
 target_link_libraries(FractalDimensionComputation PRIVATE ${OpenCV_LIBS})

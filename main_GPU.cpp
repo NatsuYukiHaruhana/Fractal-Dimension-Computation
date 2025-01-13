@@ -1,4 +1,4 @@
-//===============================================================================
+﻿//===============================================================================
 // This file is part of the software Fast Box-Counting:
 // https://www.ugr.es/~demiras/fbc
 //
@@ -27,18 +27,19 @@
 #include <cmath>
 #include <chrono>
 #include <cstring>
+#include <Windows.h>
 #include <opencv2/opencv.hpp>
 #include <algorithm>
 
-#include "bcCPU.h"
-#include "FastDBC.h"
+#include "bcCUDA2D.cuh"
+#include "FastDBC_GPU.cuh"
 
 using namespace cv;
 using namespace std;
 
-char *getCmdOption(char **begin, char **end, const std::string &option)
+char* getCmdOption(char** begin, char** end, const std::string& option)
 {
-    char **itr = std::find(begin, end, option);
+    char** itr = std::find(begin, end, option);
     if (itr != end && ++itr != end)
     {
         return *itr;
@@ -46,7 +47,7 @@ char *getCmdOption(char **begin, char **end, const std::string &option)
     return 0;
 }
 
-bool cmdOptionExists(char **begin, char **end, const std::string &option)
+bool cmdOptionExists(char** begin, char** end, const std::string& option)
 {
     return std::find(begin, end, option) != end;
 }
@@ -87,7 +88,7 @@ void writeEdgeData(Mat edges, string outFile = "edges.txt")
     ofstream fout(outFile);
 
     fout << edges.rows << '\n'
-         << edges.cols << '\n';
+        << edges.cols << '\n';
     int colIndex = 0;
 
     for (auto pData = edges.datastart; pData != edges.dataend; pData++, colIndex++)
@@ -106,8 +107,7 @@ int calculateMatrixSize(int cols, int rows)
 {
     int maxSize = rows > cols ? rows : cols;
     int matSize = 1;
-    for (; matSize < maxSize; matSize *= 2)
-        ;
+    for (; matSize < maxSize; matSize *= 2);
 
     return matSize;
 }
@@ -117,9 +117,15 @@ int calculateNumOfNs(int matSize)
     return (log(matSize) / log(2) - 1);
 }
 
-unsigned char *createImageMatrix(Mat edges, int matSize, bool writeImageToFile = false)
+unsigned char* createImageMatrix(Mat edges, int matSize, bool writeImageToFile = false)
 {
-    unsigned char *imageMat = new unsigned char[matSize * matSize];
+    unsigned char* imageMat;
+    cudaError_t cudaStatus;
+    cudaStatus = cudaMallocHost((void**)&imageMat, sizeof(unsigned char) * matSize * matSize);
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(cudaStatus));
+    }
 
     for (int i = 0; i < matSize; i++)
     {
@@ -158,41 +164,69 @@ unsigned char *createImageMatrix(Mat edges, int matSize, bool writeImageToFile =
     return imageMat;
 }
 
-float *createBoxArray(int numOfNs)
+float* createBoxArray(int numOfNs)
 {
-    float *boxArray = new float[numOfNs];
+    float* boxArray;
+    cudaError_t cudaStatus;
+    cudaStatus = cudaMallocHost((void**)&boxArray, sizeof(float) * numOfNs);
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(cudaStatus));
+    }
     return boxArray;
 }
 
-chrono::duration<double> computeCPUAlgorithm(unsigned char *imageMat, float *boxArray, int matSize, int numOfNs, const char* algorithm)
+chrono::duration<double> computeGPUAlgorithmBC(unsigned char* imageMat, float* boxArray, int matSize, int numOfNs)
 {
     chrono::time_point<chrono::system_clock> start, stop;
-
+    unsigned char bits_m = numOfNs + 1;
+    // SELECT THE SIZE OF TPB (threads per block)
+    unsigned int TPB = 128;
+    
     for (int i = 0; i < numOfNs; i++)
     {
         boxArray[i] = 0;
     }
 
-    unsigned char *imageMatCopy = new unsigned char[matSize * matSize];
-    memcpy(imageMatCopy, imageMat, sizeof(unsigned char) * matSize * matSize);
-
-    if (strcmp(algorithm, "DBC") == 0) {
-        start = std::chrono::system_clock::now();
-        seqDBC(imageMatCopy, matSize, 1, boxArray);
-        stop = std::chrono::system_clock::now();
+    cudaError_t cudaStatus;
+    start = std::chrono::system_clock::now();
+    cudaStatus = CudaBC2D(imageMat, matSize, bits_m, TPB, numOfNs, boxArray);
+    stop = std::chrono::system_clock::now();
+    std::chrono::duration<double> timeGPU = stop - start;
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(stderr, "CudaBC2D failed!");
     }
-    else if (strcmp(algorithm, "BC") == 0) {
-        start = std::chrono::system_clock::now();
-        seqBC2D(imageMatCopy, matSize, boxArray);
-        stop = std::chrono::system_clock::now();
-    }
-    
-    std::chrono::duration<double> timeCPU = stop - start;
 
-    return timeCPU;
+    return timeGPU;
 }
 
-void writeResultsToFile(float *boxArray, int numOfNs, string outFile = "results.txt")
+chrono::duration<double> computeGPUAlgorithmDBC(unsigned char* imageMat, float* boxArray, int matSize, int numOfNs)
+{
+    chrono::time_point<chrono::system_clock> start, stop;
+    // SELECT THE SIZE OF TPB (threads per block)
+    unsigned int TPB = 128;
+
+    for (int i = 0; i < numOfNs; i++)
+    {
+        boxArray[i] = 0.0f;
+    }
+
+    cudaError_t cudaStatus;
+    start = std::chrono::system_clock::now();
+    cudaStatus = CudaDBC2D(imageMat, matSize, 1, boxArray);
+    stop = std::chrono::system_clock::now();
+    std::chrono::duration<double> timeGPU = stop - start;
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(stderr, "CudaDBC2D failed!");
+    }
+
+    return timeGPU;
+}
+
+void writeResultsToFile(float* boxArray, int numOfNs, string outFile = "results.txt")
 {
     ofstream fout(outFile);
     // First write s, then n(s).
@@ -204,19 +238,19 @@ void writeResultsToFile(float *boxArray, int numOfNs, string outFile = "results.
     fout.close();
 }
 
-void clearResources(unsigned char *imageMat, float *boxArray)
+void clearResources(unsigned char* imageMat, float* boxArray)
 {
-    delete[] imageMat;
-    delete[] boxArray;
+    cudaFreeHost(imageMat);
+    cudaFreeHost(boxArray);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    char *filename = new char[0];
-    char *algorithm = new char[0];
-    int runCount = 10;
-    string errors;
+    char* filename = new char[0];
+    char* algorithm = new char[0];
 
+    string errors;
+    int runCount = 10;
     if (cmdOptionExists(argv, argv + argc, "-f"))
     {
         filename = getCmdOption(argv, argv + argc, "-f");
@@ -226,18 +260,18 @@ int main(int argc, char *argv[])
         errors += "File name must be provided!";
     }
 
+    if (cmdOptionExists(argv, argv + argc, "-t"))
+    {
+        runCount = atoi(getCmdOption(argv, argv + argc, "-t"));
+    }
+
     if (cmdOptionExists(argv, argv + argc, "-a"))
     {
         algorithm = getCmdOption(argv, argv + argc, "-a");
     }
     else {
-        algorithm = new char[3];
-        strcpy(algorithm, "BC");
-    }
-
-    if (cmdOptionExists(argv, argv + argc, "-t"))
-    {
-        runCount = atoi(getCmdOption(argv, argv + argc, "-t"));
+        algorithm = new char[4];
+        strcpy(algorithm, "DBC");
     }
 
     if (!errors.empty())
@@ -245,30 +279,36 @@ int main(int argc, char *argv[])
         ofstream fout("errors.txt");
         fout << errors;
         fout.close();
-        return -1;
+        //return -1;
     }
 
     Mat image = readImage(string("./images/").append(string(filename).append(".png")));
     Mat edges = detectEdges(image);
-    writeEdgeData(edges);
+    // writeEdgeData(edges);
 
     int matSize = calculateMatrixSize(edges.cols, edges.rows);
     int numOfNs = calculateNumOfNs(matSize);
     string directory = string("./").append(filename).append("/");
 
-    double *timeSpent = new double[runCount];
+    double* timeSpent = new double[runCount];
     for (int i = 0; i < runCount; i++)
     {
-        unsigned char *imageMat = createImageMatrix(edges, matSize);
-        float *boxArray = createBoxArray(numOfNs);
+        unsigned char* imageMat = createImageMatrix(edges, matSize);
+        float* boxArray = createBoxArray(numOfNs);
+        chrono::duration<double> timeGPU;
 
-        chrono::duration<double> timeCPU = computeCPUAlgorithm(imageMat, boxArray, matSize, numOfNs, algorithm);
+        if (strcmp(algorithm, "DBC") == 0) {
+            timeGPU = computeGPUAlgorithmDBC(imageMat, boxArray, matSize, numOfNs);
+        }
+        else {
+            timeGPU = computeGPUAlgorithmBC(imageMat, boxArray, matSize, numOfNs);
+        }
         string resultsFile = directory + string("results_") + to_string(i) + string(".txt");
         writeResultsToFile(boxArray, numOfNs, resultsFile);
 
         clearResources(imageMat, boxArray);
-        timeSpent[i] = timeCPU.count();
-        cout << "Time CPU box-counting of run " << (i + 1) << ": " << timeCPU.count() << " seconds." << endl;
+        timeSpent[i] = timeGPU.count();
+        cout << "Time GPU box-counting of run " << (i + 1) << ": " << timeGPU.count() << " seconds." << endl;
     }
 
     ofstream fout(directory + "results_time.txt");
