@@ -1,6 +1,6 @@
 <h1 align="center">Fractal Dimension Computation</h1>
 <h2 align="center">🔎About🔎</h2>
-<p>This work presents a framework for testing the runtime and results of fractal dimension computation algorithms. Included is temporarily one such algorithm by Juan Ruiz de Miras and Miguel Ángel Posadas, found <a href="[natsuyukiharuhana@gmail.com](https://www.ugr.es/~demiras/fbc/)" target="_blank">here</a>, as well as a Jupyter Notebook file through which you can generate input data and run the built executables of the algorithms.</p>
+<p>This work presents a framework for testing the runtime and results of fractal dimension computation algorithms. Included are two such algorithms by Juan Ruiz de Miras and Miguel Ángel Posadas. The first box-counting algorithm can be found <a href="https://www.ugr.es/~demiras/fbc/" target="_blank">here</a>. The differential box-counting algorithm does not have a proper source code link from the authors. They have been re-written and edited as described in their paper, which can be found <a href="https://www.researchgate.net/publication/336605788_Fast_differential_box-counting_algorithm_on_GPU" target="_blank">here</a>. A Jupyter Notebook file through which you can generate input data and run the built executables of the algorithms is also attached.</p>
 
 ###
 
@@ -15,8 +15,14 @@
 
 ---
 <h2 align="center">⚙️Installation⚙️</h2>
-<h3 align="center">Fast Box Counting algorithm</h3>
-
+<h3 align="center">CPU Versions of the algorithms</h3>
+```bash
+make build_cpu
+```
+<h3 align="center">GPU Versions of the algorithms</h3>
+```
+make build_gpu
+```
 <h3 align="center">Jupyter Notebook</h3>
 
 ###
