@@ -96,10 +96,12 @@ runOn = "CPU" # This helps make benchmarking easier by allowing you to specify t
 
 ---
 <h2 align="center">📋Work History📋</h2>
-Week 9 - Created README.md and LICENSE files.
-Week 12 - Added DBC (differential box-counting) algorithm.
-Week 13 - Added enhancements to the Jupyter Notebook Wrapper file.
-Week 14 - Updated README.md and pushed changes on GitHub.
+
+- Week 9 - Created README.md and LICENSE files.
+- Week 12 - Added DBC (differential box-counting) algorithm.
+- Week 13 - Added enhancements to the Jupyter Notebook Wrapper file.
+- Week 14 - Updated README.md and pushed changes on GitHub.
+
 ###
 
 <br clear="both">
