@@ -5,10 +5,12 @@ help: 			## Show this help
 .PHONY: help build_cpu build_gpu clean
 
 build_cpu:
-	cmake -Gninja -Bbuild_cpu -DCMAKE_BUILD_TYPE=Release -S. -Bbuild_cpu -C CMakeLists.txt
+	cmake -GNinja -Bbuild_cpu -DCMAKE_BUILD_TYPE=Release -C CMakeLists.txt
+	cmake --build build_cpu
 
 build_gpu:
-	cmake -Gninja -Bbuild_gpu -DCMAKE_BUILD_TYPE=Release -S. -Bbuild_gpu -C CMakeLists_GPU.txt
+	cmake -GNinja -Bbuild_gpu -DCMAKE_BUILD_TYPE=Release -C CMakeLists_GPU.txt
+	cmake --build build_gpu
 
 clean:
 	rm -rf build_cpu build_gpu
