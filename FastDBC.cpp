@@ -1,5 +1,6 @@
 #include "FastDBC.h"
 #include <algorithm>
+#include <cstring>
 
 template <typename T>
 T max4(T a, T b, T c, T d) {
@@ -12,7 +13,7 @@ T min4(T a, T b, T c, T d) {
 }
 
 void seqDBC(unsigned char* I, const int M, const unsigned char G, float Nr[]) {
-    unsigned char *Imax = new unsigned char[M * M]; 
+    unsigned char *Imax = new unsigned char[M * M];
     unsigned char *Imin = new unsigned char[M * M];
 
     memcpy(Imax, I, sizeof(unsigned char) * M * M);
