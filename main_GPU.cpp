@@ -52,6 +52,41 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
     return std::find(begin, end, option) != end;
 }
 
+bool fileExists(const string& filename)
+{
+    ifstream file(filename);
+    return file.good();
+}
+
+string findFilePath(const string& filename)
+{
+    string filePath = string("./images/").append(string(filename).append(".png"));
+    // Attempt to look for files in ./images, appending the file extension
+    if (fileExists(filePath)) {
+        return filePath;
+    }
+
+    filePath = string("./images/").append(string(filename));
+    // Attempt to look for files in ./images, without appending the file extension
+    if (fileExists(filePath)) {
+        return filePath;
+    }
+
+    filePath = string("./").append(string(filename).append(".png"));
+    // Attempt to look for files in current working directory, appending the file extension
+    if (fileExists(filePath)) {
+        return filePath;
+    }
+
+    filePath = string("./").append(string(filename));
+    // Attempt to look for files in current working directory, without appending the file extension
+    if (fileExists(filePath)) {
+        return filePath;
+    }
+
+    return string("");
+}
+
 Mat readImage(string inFile, bool display = false)
 {
     Mat image = imread(inFile, IMREAD_GRAYSCALE);
@@ -248,12 +283,19 @@ int main(int argc, char* argv[])
 {
     char* filename = new char[0];
     char* algorithm = new char[0];
+    int runCount = 10;
+    string filePath = "";
 
     string errors;
-    int runCount = 10;
     if (cmdOptionExists(argv, argv + argc, "-f"))
     {
         filename = getCmdOption(argv, argv + argc, "-f");
+
+        // Try several file paths.
+        filePath = findFilePath(filename);
+        if (filePath == "") {
+            errors += string("\nCould not find file ").append(filename).append("!");
+        }
     }
     else
     {
@@ -282,7 +324,7 @@ int main(int argc, char* argv[])
         //return -1;
     }
 
-    Mat image = readImage(string("./images/").append(string(filename).append(".png")));
+    Mat image = readImage(filePath);
     Mat edges = detectEdges(image);
     // writeEdgeData(edges);
 
