@@ -21,7 +21,7 @@
 void seqBC2D(unsigned char* M, const int m, float* n) {
 	unsigned int s = 2;
 	unsigned int size = m;
-	unsigned char ni = 0; 
+	unsigned char ni = 0;
 
 	while (size > 2) {
 		int sm = s >> 1; // s/2
@@ -29,10 +29,10 @@ void seqBC2D(unsigned char* M, const int m, float* n) {
 		unsigned long ismm;
 
 		n[ni] = 0;
-		for (unsigned long i = 0; i < (m - 1); i += s) {
+		for (int i = 0; i < (m - 1); i += s) {
 			im = i * m;
 			ismm = (i + sm) * m;
-			for (unsigned long j = 0; j < (m - 1); j += s) {
+			for (int j = 0; j < (m - 1); j += s) {
 				M[im + j] = M[(im)+j] || M[(im)+(j + sm)] || M[ismm + j] || M[ismm + (j + sm)];
 				n[ni] += M[im + j];
 			}

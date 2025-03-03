@@ -28,8 +28,8 @@ void seqDBC(unsigned char* I, const int M, const unsigned char G, float Nr[]) {
 
         h = h == 0.0 ? 0.001 : h;
 
-        for (unsigned long i = 0; i < (M - 1); i += s) {
-            for (unsigned long j = 0; j < (M - 1); j += s) {
+        for (int i = 0; i < (M - 1); i += s) {
+            for (int j = 0; j < (M - 1); j += s) {
                 Imax[i * M + j] = max4(Imax[i * M + j], Imax[i * M + j + s / 2], Imax[(i + s / 2) * M + j], Imax[(i + s / 2) * M + j + s / 2]);
                 Imin[i * M + j] = min4(Imin[i * M + j], Imin[i * M + j + s / 2], Imin[(i + s / 2) * M + j], Imin[(i + s / 2) * M + j + s / 2]);
 
