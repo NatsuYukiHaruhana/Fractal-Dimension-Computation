@@ -221,7 +221,7 @@ chrono::duration<double> computeCPUAlgorithm(unsigned char *imageMat, float *box
         seqBC2D(imageMatCopy, matSize, boxArray);
         stop = std::chrono::system_clock::now();
     }
-    
+
     std::chrono::duration<double> timeCPU = stop - start;
 
     return timeCPU;
@@ -247,8 +247,8 @@ void clearResources(unsigned char *imageMat, float *boxArray)
 
 int main(int argc, char *argv[])
 {
-    char *filename = new char[0];
-    char *algorithm = new char[0];
+    char *filename = nullptr;
+    char *algorithm = nullptr;
     int runCount = 10;
     string filePath = "";
 
